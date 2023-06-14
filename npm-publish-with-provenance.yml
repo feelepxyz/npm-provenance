@@ -1,0 +1,81 @@
+name: npm-publish-with-provenance
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to publish to'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+        - staging
+        - production
+      cli_version:
+        description: 'npm CLI version to install'
+        required: true
+        default: 'latest'
+        type: string
+
+jobs:
+  production:
+    if: github.event.inputs.environment == 'production'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # v3
+      - name: Setup node
+        uses: actions/setup-node@2fddd8803e2f5c9604345a0b591c3020ee971a93 # v3
+        with:
+          node-version: 16
+          registry-url: 'https://registry.npmjs.org'
+      - name: Bump package versions
+        run: |
+          sed -i "s/1.0.0/1.0.0-${GITHUB_RUN_ID}.${GITHUB_RUN_ATTEMPT}/" "package.json"
+      - name: Publish package
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_ACCESS_TOKEN_PRODUCTION }}
+        run: |
+          npm install -g npm@${{ github.event.inputs.cli_version }}
+          npm install
+          npm pack --json
+          TARBALL=$(readlink -f  *.tgz)
+          npm publish ${TARBALL} --provenance --access public
+      - uses: actions/upload-artifact@v3
+        with:
+          name: package.tgz
+          path: ./*.tgz
+  staging:
+    if: github.event.inputs.environment == 'staging'
+    runs-on: self-hosted
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # v3
+      - name: Setup node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+          check-latest: true
+          registry-url: 'https://registry-staging.npm.red'
+      - name: Bump package versions
+        run: |
+          sed -i -e "s/1.0.0/1.0.0-${GITHUB_RUN_ID}.${GITHUB_RUN_ATTEMPT}/" "package.json"
+      - name: Publish package
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_ACCESS_TOKEN_STAGING }}
+        run: |
+          npm install -g npm@${{ github.event.inputs.cli_version }} --registry https://registry.npmjs.com
+          npm -v
+          npm install --registry https://registry.npmjs.com
+          npm pack --json
+          TARBALL=$(readlink -f  *.tgz)
+          npm publish ${TARBALL} --provenance --access public --registry https://registry-staging.npm.red
+      - uses: actions/upload-artifact@v3
+        with:
+          name: package.tgz
+          path: ./*.tgz

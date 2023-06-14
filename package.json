@@ -1,0 +1,24 @@
+{
+  "name": "@feelepxyz/npm-provenance",
+  "version": "1.0.0",
+  "description": "testing provenance",
+  "private": false,
+  "main": "index.js",
+  "scripts": {},
+  "files": [
+    "index.js"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/feelepxyz/npm-provenance"
+  },
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/feelepxyz/npm-provenance/issues"
+  },
+  "homepage": "https://github.com/feelepxyz/npm-provenance#readme",
+  "dependencies": {
+    "sigstore": "^1.2.0"
+  }
+}
