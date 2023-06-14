@@ -15,7 +15,6 @@ on:
         required: true
         default: 'latest'
         type: string
-
 jobs:
   production:
     if: github.event.inputs.environment == 'production'
